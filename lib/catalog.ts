@@ -1,3 +1,12 @@
+export type PlayerSource = {
+  title: string;
+  player_page_url: string;
+  provider: "upload18";
+  origin: string;
+  referer: string;
+  status: "unchecked" | "ready" | "failed";
+};
+
 export type Movie = {
   slug: string;
   title: string;
@@ -12,6 +21,8 @@ export type Movie = {
   accent: string;
   badge?: string;
   playerPageUrl?: string;
+  player?: PlayerSource;
+  fallback_players?: PlayerSource[];
 };
 
 export const genres = ["ทั้งหมด", "แอ็กชัน", "ไซไฟ", "ดราม่า", "ทริลเลอร์", "แฟนตาซี"];
@@ -31,6 +42,14 @@ export const movies: Movie[] = [
     accent: "#ffd166, #f08c46, #4f2a16",
     badge: "มาแรง",
     playerPageUrl: "https://upload18.org//play//index//bobb-373",
+    player: {
+      title: "BOBB-373",
+      player_page_url: "https://upload18.org//play//index//bobb-373",
+      provider: "upload18",
+      origin: "https://upload18.org",
+      referer: "https://upload18.org/",
+      status: "unchecked",
+    },
   },
   {
     slug: "velvet-city",

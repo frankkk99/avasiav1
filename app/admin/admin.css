@@ -93,3 +93,7 @@ pre { overflow: auto; max-height: 420px; white-space: pre-wrap; overflow-wrap: a
   .form, .diagnostics, .player-panel, .raw-url { padding: 13px; }
   .video { min-height: 210px; }
 }
+
+.source-switch { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.source-switch button { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: #9fb0be; }
+.source-switch button.source-switch__active { border-color: rgba(104,168,255,.7); background: rgba(45,126,247,.2); color: #c8ddff; }

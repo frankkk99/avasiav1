@@ -8,6 +8,19 @@ type ProbeResult = {
   error?: string;
   proxyEnabled?: boolean;
   serverNote?: string;
+  source?: {
+    title?: string;
+    playerPageUrl: string;
+    provider: string;
+    origin: string;
+    referer: string;
+    status: string;
+  };
+  session?: {
+    playbackUrl: string;
+    expiresAt: number;
+    ttlSeconds: number;
+  };
   manifest?: {
     requestedUrl: string;
     finalUrl: string;
@@ -76,6 +89,8 @@ function badge(ok: boolean | undefined, yes = "PASS", no = "FAIL") {
 }
 
 export default function Home() {
+  const [inputMode, setInputMode] = useState<"player" | "manifest">("player");
+  const [playerPageUrl, setPlayerPageUrl] = useState("https://upload18.org//play//index//bobb-373");
   const [url, setUrl] = useState("");
   const [origin, setOrigin] = useState("https://upload18.org");
   const [referer, setReferer] = useState("https://upload18.org/");
@@ -94,23 +109,26 @@ export default function Home() {
   }, []);
 
   const proxyUrl = useMemo(() => {
+    if (result?.session?.playbackUrl) return result.session.playbackUrl;
     if (!url) return "";
     const params = new URLSearchParams({ url });
     if (origin) params.set("origin", origin);
     if (referer) params.set("referer", referer);
     if (userAgent) params.set("ua", userAgent);
     return `/api/admin/stream?${params.toString()}`;
-  }, [url, origin, referer, userAgent]);
+  }, [result?.session?.playbackUrl, url, origin, referer, userAgent]);
 
   async function probe(event?: FormEvent) {
     event?.preventDefault();
     setLoading(true);
     setPlayerMessage("");
     try {
-      const response = await fetch("/api/admin/probe", {
+      const response = await fetch(inputMode === "player" ? "/api/admin/upload18/resolve" : "/api/admin/probe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, origin, referer, userAgent, testSegment: true }),
+        body: JSON.stringify(inputMode === "player"
+          ? { playerPageUrl, origin, referer, userAgent, testSegment: true }
+          : { url, origin, referer, userAgent, testSegment: true }),
       });
       const data = (await response.json()) as ProbeResult;
       setResult(data);
@@ -171,19 +189,32 @@ export default function Home() {
             ตรวจ manifest, signed URL, CORS, expiry และ segment แรก โดยไม่ต้องเปิด DevTools ของเว็บต้นทาง
           </p>
         </div>
-        <div className="status-chip">Server-side probe</div>
+        <div className="status-chip">Player URL → HLS → Session</div>
       </section>
 
       <form className="panel form" onSubmit={probe}>
         <label className="field full">
-          <span>Manifest / Media URL</span>
-          <textarea
-            value={url}
-            onChange={(event) => setUrl(event.target.value.trim())}
-            placeholder="https://example.com/m/..."
-            rows={4}
-            spellCheck={false}
-          />
+          <span>แหล่งข้อมูลที่จะตรวจ</span>
+          <div className="source-switch">
+            <button className={inputMode === "player" ? "source-switch__active" : ""} type="button" onClick={() => { setInputMode("player"); setResult(null); }}>Upload18 Player URL</button>
+            <button className={inputMode === "manifest" ? "source-switch__active" : ""} type="button" onClick={() => { setInputMode("manifest"); setResult(null); }}>Direct m3u8</button>
+          </div>
+          {inputMode === "player" ? (
+            <input
+              value={playerPageUrl}
+              onChange={(event) => setPlayerPageUrl(event.target.value.trim())}
+              placeholder="https://upload18.org//play//index//bobb-373"
+              spellCheck={false}
+            />
+          ) : (
+            <textarea
+              value={url}
+              onChange={(event) => setUrl(event.target.value.trim())}
+              placeholder="https://helvid.com/m/..."
+              rows={4}
+              spellCheck={false}
+            />
+          )}
         </label>
 
         <label className="field">
@@ -200,13 +231,14 @@ export default function Home() {
         </label>
 
         <div className="actions full">
-          <button className="primary" type="submit" disabled={!url || loading}>
-            {loading ? "กำลังทดสอบ…" : "ทดสอบ Manifest + Segment"}
+          <button className="primary" type="submit" disabled={!(inputMode === "player" ? playerPageUrl : url) || loading}>
+            {loading ? "กำลังเปิด Player และตรวจ HLS…" : inputMode === "player" ? "Resolve Player + ตรวจ HLS" : "ทดสอบ Manifest + Segment"}
           </button>
           <button
             className="secondary"
             type="button"
             onClick={() => {
+              setPlayerPageUrl("");
               setUrl("");
               setResult(null);
               setPlayerMessage("");
@@ -244,6 +276,13 @@ export default function Home() {
               </strong>
               <small>{manifest.expiry ? formatRemaining(manifest.expiry.secondsRemaining) : "ไม่พบ expiry param"}</small>
             </article>
+            {result.session && (
+              <article className="metric">
+                <span>Playback Session</span>
+                <strong><span className="badge good">READY</span></strong>
+                <small>{formatRemaining(result.session.ttlSeconds)}</small>
+              </article>
+            )}
           </section>
 
           <section className="panel diagnostics">
@@ -316,19 +355,19 @@ export default function Home() {
             <div className="panel-title">
               <div>
                 <p className="eyebrow">OPTIONAL PREVIEW</p>
-                <h2>ทดลองเล่นผ่าน local proxy</h2>
+                <h2>{result.session ? "ทดลองเล่นผ่าน Playback Session" : "ทดลองเล่นผ่าน local proxy"}</h2>
               </div>
-              {result.proxyEnabled ? <span className="badge good">ENABLED</span> : <span className="badge neutral">DISABLED</span>}
+              {result.session ? <span className="badge good">SESSION</span> : result.proxyEnabled ? <span className="badge good">ENABLED</span> : <span className="badge neutral">DISABLED</span>}
             </div>
 
             <video ref={videoRef} controls playsInline className="video" />
             <div className="actions">
-              <button className="primary" type="button" disabled={!result.proxyEnabled || !result.ok} onClick={playPreview}>
+              <button className="primary" type="button" disabled={(!result.session && !result.proxyEnabled) || !result.ok} onClick={playPreview}>
                 เล่น Preview
               </button>
               <span className="player-message">{playerMessage}</span>
             </div>
-            {!result.proxyEnabled && (
+            {!result.session && !result.proxyEnabled && (
               <p className="hint">
                 ตั้ง <code>ENABLE_STREAM_PROXY=true</code> ตอนรัน local เพื่อเปิด Preview. ไม่แนะนำให้เปิดบน public deployment เพราะจะใช้ bandwidth สูงและอาจถูกนำไปใช้เป็น proxy.
               </p>
@@ -336,7 +375,7 @@ export default function Home() {
           </section>
 
           <section className="panel raw-url">
-            <div className="panel-title"><h2>Final manifest URL</h2></div>
+            <div className="panel-title"><h2>{result.session ? "Resolved temporary manifest" : "Final manifest URL"}</h2></div>
             <code className="urlblock">{manifest.finalUrl}</code>
             <p className="hint">{result.serverNote}</p>
           </section>
