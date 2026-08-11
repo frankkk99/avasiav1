@@ -39,3 +39,5 @@ Movie records keep the Upload18 page URL, not a permanent `.m3u8` URL:
 ```
 
 When playback starts, `/api/playback/start` opens the page in Chromium, reads `window.PLAYER_CONFIG.m3u8`, runs the HLS/segment diagnostic, and returns a short-lived signed Playback Session. HLS.js plays through `/api/playback/[session]`; when the session expires, the proxy resolves the Player URL again and rewrites the next manifest with a fresh session. Fallback Player URLs are attempted in order.
+
+Production must set `PLAYBACK_SESSION_SECRET` to a long random value before enabling playback sessions. The resolver intentionally refuses to mint production sessions when this secret is missing.

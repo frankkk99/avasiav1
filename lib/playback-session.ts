@@ -16,7 +16,11 @@ export type PlaybackSessionPayload = {
 const DEFAULT_TTL_SECONDS = 300;
 
 function secret() {
-  return process.env.PLAYBACK_SESSION_SECRET || "avasiav1-local-playback-secret";
+  const value = process.env.PLAYBACK_SESSION_SECRET;
+  if (!value && process.env.NODE_ENV === "production") {
+    throw new Error("ยังไม่ได้ตั้ง PLAYBACK_SESSION_SECRET บนเซิร์ฟเวอร์");
+  }
+  return value || "avasiav1-local-playback-secret";
 }
 
 function encode(value: string) {
