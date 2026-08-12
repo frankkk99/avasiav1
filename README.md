@@ -20,6 +20,19 @@ The HLS diagnostic tools from `frankkk99/hlstest` are available under `/admin`:
 - `/admin/hls-test` — manifest, Origin/Referer, expiry and first-segment diagnostics
 - `/admin/avdb-import-test` — AVDB page/API import test
 - `/admin/embed-test` — iframe/player wrapper test
+- `/admin/runs` — ประวัติการรันที่บันทึกลง Alphalab Hub
+
+ผลจาก AVDB Import, HLS Probe และ Upload18 Resolver จะถูกบันทึกลง Supabase โปรเจกต์
+`Alphalab Hub` ผ่าน Edge Function `avasi-admin-store` โดยเก็บ URL แบบตัด query token แล้ว
+และเก็บรายการ AVDB แบบ upsert ใน `avasi_catalog_items`.
+
+ตั้งค่าใน local/production:
+
+```bash
+ALPHALABHUB_SUPABASE_URL=https://qlunnckudeynhruxzpnb.supabase.co
+ALPHALABHUB_SUPABASE_ANON_KEY=<Alphalab Hub anon key>
+ALPHALABHUB_SUPABASE_FUNCTION_URL=https://qlunnckudeynhruxzpnb.supabase.co/functions/v1/avasi-admin-store
+```
 
 Set `ALLOWED_HLS_HOSTS` to the smallest approved host list. Keep `ENABLE_STREAM_PROXY=false` on public deployments; enable it only for local or private playback testing.
 

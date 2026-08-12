@@ -30,6 +30,13 @@ type ScanResult = {
   itemsFound?: number;
   elapsedMs?: number;
   items?: Item[];
+  persistence?: {
+    persisted: boolean;
+    runId?: string;
+    itemsSaved?: number;
+    reason?: string;
+    error?: string;
+  };
 };
 
 export default function AvdbImportTestPage() {
@@ -80,6 +87,14 @@ export default function AvdbImportTestPage() {
       </section>
 
       {result?.error && <div className="alert badbox">{result.error}</div>}
+
+      {result?.persistence && (
+        <div className={`alert ${result.persistence.persisted ? "notice" : "badbox"}`}>
+          {result.persistence.persisted
+            ? `บันทึกลง Alphalab Hub แล้ว ${result.persistence.itemsSaved ?? 0} รายการ`
+            : result.persistence.error || "ยังบันทึกลง Alphalab Hub ไม่ได้"}
+        </div>
+      )}
 
       {result?.ok && (
         <section className="summary-grid">

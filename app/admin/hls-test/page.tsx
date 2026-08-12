@@ -69,6 +69,10 @@ type ProbeResult = {
     elapsedMs?: number;
     error?: string;
   } | null;
+  persistence?: {
+    persisted: boolean;
+    error?: string;
+  };
 };
 
 const DEFAULT_UA =
@@ -250,6 +254,12 @@ export default function Home() {
       </form>
 
       {result?.error && <div className="alert badbox">{result.error}</div>}
+
+      {result?.persistence && (
+        <div className={`alert ${result.persistence.persisted ? "notice" : "badbox"}`}>
+          {result.persistence.persisted ? "บันทึกผลทดสอบลง Alphalab Hub แล้ว" : result.persistence.error || "ยังบันทึกผลทดสอบไม่ได้"}
+        </div>
+      )}
 
       {manifest && (
         <>
