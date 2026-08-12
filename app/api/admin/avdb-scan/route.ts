@@ -3,6 +3,7 @@ import { inspect } from "node:util";
 import chromium from "@sparticuz/chromium";
 import puppeteer, { type Page } from "puppeteer-core";
 import { getServerlessChromiumExecutable } from "@/lib/serverless-chromium";
+import { persistAvdbScan } from "@/lib/alphalabhub";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -360,7 +361,7 @@ export async function POST(request: NextRequest) {
         ...result.item,
       }));
 
-    return NextResponse.json({
+    const result = {
       ok: true,
       mode: "chromium",
       pageUrl,
@@ -372,7 +373,16 @@ export async function POST(request: NextRequest) {
       elapsedMs: Date.now() - started,
       items,
       apiErrors: apiResults.filter((result: any) => !result?.item),
+    };
+    const persistence = await persistAvdbScan({
+      pageUrl,
+      finalPageUrl,
+      status: apiResults.some((item: any) => item?.item) ? "success" : "partial",
+      items,
+      result,
     });
+
+    return NextResponse.json({ ...result, persistence });
   } catch (error) {
     console.error("AVDB scan failed", error);
     return NextResponse.json(

@@ -4,6 +4,7 @@ import {
   proxyEnabled,
   validateUpstreamUrl,
 } from "@/lib/security";
+import { persistToolRun } from "@/lib/alphalabhub";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
       session: finalUrl.searchParams.has("s") || finalUrl.searchParams.has("k"),
     };
 
-    return NextResponse.json({
+    const result = {
       ok: response.ok && isHls,
       manifest: {
         requestedUrl: url.toString(),
@@ -187,7 +188,17 @@ export async function POST(request: NextRequest) {
       proxyEnabled: proxyEnabled(),
       serverNote:
         "การทดสอบนี้ยิงจากเครื่อง/เซิร์ฟเวอร์ที่รัน Next.js หาก signed URL ผูก IP ผลบน Vercel อาจต่างจากเครื่องผู้ใช้",
+    };
+    const persistence = await persistToolRun({
+      tool: "hls_probe",
+      mode: "direct_manifest",
+      sourceUrl: url.toString(),
+      finalUrl: finalUrl.toString(),
+      status: result.ok ? "success" : "failed",
+      result,
     });
+
+    return NextResponse.json({ ...result, persistence });
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "Probe failed" },

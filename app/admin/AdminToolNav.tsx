@@ -7,6 +7,7 @@ const tools = [
   { href: "/admin/avdb-import-test", label: "AVDB Import", note: "ดึงข้อมูล 1 หน้า" },
   { href: "/admin/hls-test", label: "HLS Test", note: "ตรวจ Manifest / Segment" },
   { href: "/admin/embed-test", label: "Embed Test", note: "ทดลองครอบ Player" },
+  { href: "/admin/runs", label: "History", note: "ประวัติที่บันทึกลง Alphalab Hub" },
 ];
 
 export default function AdminToolNav() {
